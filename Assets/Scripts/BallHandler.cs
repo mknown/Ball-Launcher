@@ -2,6 +2,9 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using UnityEngine.InputSystem.EnhancedTouch;
+using Touch = UnityEngine.InputSystem.EnhancedTouch.Touch;
+
 public class BallHandler : MonoBehaviour
 {
     private Camera mainCamera;
@@ -19,7 +22,15 @@ public class BallHandler : MonoBehaviour
         mainCamera = Camera.main;
         RespawnBall();
     }
-    
+     void OnEnable()
+    {
+        EnhancedTouchSupport.Enable();    
+    }
+     void OnDisable()
+    {
+        EnhancedTouchSupport.Disable();
+        
+    }
     void RespawnBall()
     {
         GameObject ballInstance = Instantiate(ballPrefab,pivot.position,Quaternion.identity);
@@ -33,7 +44,7 @@ public class BallHandler : MonoBehaviour
     {   
         if (currentBallRigidBody==null) { return; }
 
-        else if (!Touchscreen.current.primaryTouch.press.isPressed)
+        else if (Touch.activeTouches.Count==0)
         {
             if (isDragged)
             {
@@ -45,14 +56,21 @@ public class BallHandler : MonoBehaviour
         }
         isDragged = true;
         currentBallRigidBody.isKinematic=true;
-        Vector2 touchData=Touchscreen.current.primaryTouch.position.ReadValue();
+        Vector2 touchData=new Vector2();
+        foreach (Touch touch in Touch.activeTouches)
+        {
+            touchData += touch.screenPosition;
+            
+        }
+        touchData /= Touch.activeTouches.Count;
         Vector3 worldPoint = mainCamera.ScreenToWorldPoint(touchData);
         currentBallRigidBody.position = worldPoint;
 
     }
     private void LaunchBall()
     {
-        currentBallRigidBody.bodyType = RigidbodyType2D.Dynamic;
+        //currentBallRigidBody.bodyType = RigidbodyType2D.Dynamic;
+        currentBallRigidBody.isKinematic = false;
         currentBallRigidBody=null;
 
         Invoke("Detach", counter);
